@@ -52,3 +52,6 @@ $$C^d \equiv (M^e)^d \equiv M^{ed} \equiv M^{1 + k\phi(n)} \equiv M \cdot (M^{\p
 To clone this project along with its dependencies:
 ```bash
 git clone --recursive [https://github.com/Thomas170491/RSA-Key-Gen.git](https://github.com/Thomas170491/RSA-Key-Gen.git)
+```
+
+This project is open-source and available under the MIT License. SeeLICENSE file for more info.
