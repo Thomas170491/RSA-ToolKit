@@ -45,6 +45,7 @@ RSA uses modular exponentiation to transform data.
 
 ### 3. Proof of Correctness
 The decryption works because of **Euler's Theorem**. Since $d$ is the modular inverse of $e \pmod{\phi(n)}$, we know that $ed = 1 + k\phi(n)$ for some integer $k$. Therefore:
+
 $$C^d \equiv (M^e)^d \equiv M^{ed} \equiv M^{1 + k\phi(n)} \equiv M \cdot (M^{\phi(n)})^k \equiv M \cdot 1^k \equiv M \pmod{n}$$
 
 ## 📦 Installation & Setup
