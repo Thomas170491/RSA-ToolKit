@@ -1,66 +1,88 @@
 import sys
 import os
 
-# 1. Path Setup
-# Ensure we can find our custom modules
+# Ensure we can find our custom modules in the current directory
 sys.path.append(os.path.join(os.getcwd()))
 
-# 2. Imports
 from utils.rsa_math import generate_rsa_keys
 from utils.padding import oaep_pad, oaep_unpad
+from utils.signatures import pss_encode, pss_verify
 
 def run_demonstration():
-    print("-" * 50)
-    print("RSA-OAEP CRYPTOSYSTEM DEMONSTRATION")
-    print("-" * 50)
-
-    # 3. Key Generation
-    # We generate a 1024-bit modulus (n). 
-    # k_size is 128 bytes (1024 / 8).
+    # --- 1. SETUP ---
     bits = 1024
+    # k_size is the length of the modulus in bytes
     k_size = bits // 8
     
-    print(f"[*] Generating {bits}-bit RSA Keypair...")
-    (e,n) , (d,n) = generate_rsa_keys(bits)
-    print("[+] Keys generated successfully.")
-    print(f"[*] Public Exponent (e): {e}")
-    print(f"[*] Modulus (n) starts with: {str(n)[:20]}...")
-
-    print("-" * 50)
-
-    # 4. The Message
-    message = "Secret Message for Thomas: The eagle has landed."
-    print(f"Original Text:  {message}")
-    message_bytes = message.encode('utf-8')
-
-    # 5. Encryption Process
-    # Text -> OAEP Pad -> Integer -> Modular Exponentiation
-    print("[*] Applying OAEP Padding and Encrypting...")
-    padded_block = oaep_pad(message_bytes, k_size)
-    m_int = int.from_bytes(padded_block, byteorder='big')
-    cipher_int = pow(m_int, e, n)
+    print("=" * 60)
+    print(f"RSA TOOLKIT DEMO: {bits}-BIT MODULUS")
+    print("=" * 60)
     
-    print(f"Ciphertext (int): {str(cipher_int)[:60]}...")
-
-    print("-" * 50)
-
-    # 6. Decryption Process
-    # Ciphertext -> Private Key Math -> Unpad -> Text
-    print("[*] Decrypting and Removing OAEP Padding...")
-    decrypted_int = pow(cipher_int, d, n)
+    print(f"[*] Generating Keypair...")
+    (d,n), (e,n)= generate_rsa_keys(bits)
     
-    # We must ensure the byte string is exactly k_size (128 bytes) 
-    # so the unpadding logic doesn't get misaligned.
-    decrypted_padded_bytes = decrypted_int.to_bytes(k_size, byteorder='big')
+    # We recalculate k_size based on the actual bit length of n
+    # This prevents OverflowErrors if n is exactly 1024 bits
+    byte_len = (n.bit_length() + 7) // 8
     
-    try:
-        final_message_bytes = oaep_unpad(decrypted_padded_bytes, k_size)
-        print(f"Decrypted Text: {final_message_bytes.decode('utf-8')}")
-        print("[SUCCESS] Integrity check passed!")
-    except ValueError as e:
-        print(f"[FAILURE] Decryption failed: {e}")
+    print("[+] Public and Private keys generated.")
+    print("-" * 60)
 
-    print("-" * 50)
+    # --- 2. RSA-OAEP ENCRYPTION DEMO ---
+    print("PHASE 1: CONFIDENTIALITY (RSA-OAEP)")
+    secret_text = "The launch codes are 0000-1111."
+    print(f"[*] Original Message: {secret_text}")
+
+    # Encryption
+    print("[*] Encrypting with Public Key...")
+    # Use byte_len to ensure the padded block matches the modulus size
+    padded_enc = oaep_pad(secret_text.encode(), byte_len)
+    cipher_int = pow(int.from_bytes(padded_enc, 'big'), e, n)
+    print(f"[+] Ciphertext: {hex(cipher_int)[:50]}...")
+
+    # Decryption
+    print("[*] Decrypting with Private Key...")
+    dec_int = pow(cipher_int, d, n)
+    # Ensure the integer is converted back to the exact block size
+    dec_bytes = dec_int.to_bytes(byte_len, 'big')
+    recovered_text = oaep_unpad(dec_bytes, byte_len).decode()
+    print(f"[+] Recovered: {recovered_text}")
+    print("-" * 60)
+
+    # --- 3. RSA-PSS SIGNATURE & TAMPER DEMO ---
+    print("PHASE 2: AUTHENTICITY & INTEGRITY (RSA-PSS)")
+    original_doc = "I authorize payment of $10.00 to Thomas."
+    print(f"[*] Document: {original_doc}")
+
+    # Sign (Private Key)
+    print("[*] Signing with Private Key...")
+    em_sign = pss_encode(original_doc.encode(), byte_len)
+    sig_int = pow(int.from_bytes(em_sign, 'big'), d, n)
+    
+    # FIX: Use byte_len to prevent OverflowError
+    signature = sig_int.to_bytes(byte_len, 'big')
+    print("[+] Signature created.")
+
+    # Tamper Test Simulation
+    tampered_doc = "I authorize payment of $10,000 to Thomas."
+    print(f"\n[!] ALERT: Attacker modified document to: {tampered_doc}")
+
+    # Verify (Public Key)
+    print("[*] Verifying Signature against tampered document...")
+    # Reverse the RSA math: em = s^e mod n
+    s_int = int.from_bytes(signature, 'big')
+    recovered_em_int = pow(s_int, e, n)
+    recovered_em = recovered_em_int.to_bytes(byte_len, 'big')
+    
+    # Check the PSS structure against the tampered text
+    is_valid = pss_verify(tampered_doc.encode(), recovered_em, byte_len)
+    
+    if not is_valid:
+        print("[SUCCESS] The signature REJECTED the tampered document!")
+        print("[INFO] Integrity check failed as expected.")
+    else:
+        print("[ERROR] The signature was bypassable. Check logic.")
+    print("=" * 60)
 
 if __name__ == "__main__":
     run_demonstration()
