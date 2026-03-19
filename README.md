@@ -40,7 +40,8 @@ python attack_demo.py
 
 ## 🧮 Mathematical Background
 
-See MATHEMATICAL_BACKGROUND.md for details
+
+For detailed mathematics behind RSA, OAEP, and PSS, see [MATHEMATICAL_BACKGROUND.md](MATHEMATICAL_BACKGROUND.md)
 
 ---
 

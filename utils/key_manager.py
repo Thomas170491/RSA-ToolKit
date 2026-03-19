@@ -28,10 +28,10 @@ def load_keys() :
         return None
     with open(KEY_FILE, "r") as f :
         data = json.load(f) 
-    d = int(data["private"][d])
-    n = int(data["private"][n])
-    e = int(data["public"][e])
-    n_pub = int(data["public"][n])
+    d = int(data["private"]["d"])
+    n = int(data["private"]["n"])
+    e = int(data["public"]["e"])
+    n_pub = int(data["public"]["n"])
     assert n == n_pub, "Public and private modules mismatch"
     return (d,n) , (e,n)
 
@@ -43,13 +43,15 @@ def encrypt_message(message :str, e :int ,n :int) :
     byte_len = (n.bit_length()+7)//8
     padded = oaep_pad(message.encode(),byte_len)
     cipher_int = pow(int.from_bytes(padded,'big'),e,n)
-    return hex(cipher_int)
+    cipher_hex =  hex(cipher_int)
+    print(f"Ciphertext (hex) : {cipher_hex}")
 
 def decrypt_message(cipher_hex : str, d : int, n :int) :
      byte_len = (n.bit_length()+7)//8
      cipher_int = int(cipher_hex,16)
      dec_bytes = pow(cipher_int,d,n).to_bytes(byte_len,'big')
-     return oaep_unpad(dec_bytes,byte_len).decode()
+     recovered = oaep_unpad(dec_bytes,byte_len).decode()
+     print(f"Decrypted message : {recovered}")
 
 def sign_message(message :str, d :int , n :int ) :
      byte_len = (n.bit_length()+7)//8

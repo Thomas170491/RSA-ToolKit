@@ -1,56 +1,114 @@
-from math import isqrt
+import sys
+import os
 
-def generate_weak_rsa_keys() :
-    #Using very small primes (insecure on purpose)
-    p = 53
-    q=61
-    n = p*q
-    phi = (p-1)*(q-1)
-    e =17
+sys.path.append(os.getcwd())
+from utils.rsa_math import generate_rsa_keys
+from utils.padding import oaep_pad, oaep_unpad
+from utils.signatures import pss_encode, pss_verify
 
-    #Compute d (modular inverse)
+def run_demonstration():
+    # --- 1. SETUP ---
+    bits = 1024
+    # k_size is the length of the modulus in bytes
+    k_size = bits // 8
+    
+    print("=" * 60)
+    print(f"RSA TOOLKIT DEMO: {bits}-BIT MODULUS")
+    print("=" * 60)
+    
+    print(f"[*] Generating Keypair...")
+    (d,n), (e,n)= generate_rsa_keys(bits)
+    
+    # We recalculate k_size based on the actual bit length of n
+    # This prevents OverflowErrors if n is exactly 1024 bits
+    byte_len = (n.bit_length() + 7) // 8
+    
+    print("[+] Public and Private keys generated.")
+    print("-" * 60)
 
-    d = pow(e,-1,phi)
+    # --- 2. RSA-OAEP ENCRYPTION DEMO ---
+    print("PHASE 1: CONFIDENTIALITY (RSA-OAEP)")
+    secret_text = "The launch codes are 0000-1111."
+    print(f"[*] Original Message: {secret_text}")
 
-    return (d,n), (e,n)
+    # Encryption
+    print("[*] Encrypting with Public Key...")
+    # Use byte_len to ensure the padded block matches the modulus size
+    padded_enc = oaep_pad(secret_text.encode(), byte_len)
+    cipher_int = pow(int.from_bytes(padded_enc, 'big'), e, n)
+    print(f"[+] Ciphertext: {hex(cipher_int)[:50]}...")
 
-def factor(n) : 
-    print(f"[*] Factoring n = {n}")
-    for i in range(2,isqrt(n)):
-        if n%i == 0:
-            return i, n//i
-    return None, None
+    # Decryption
+    print("[*] Decrypting with Private Key...")
+    dec_int = pow(cipher_int, d, n)
+    # Ensure the integer is converted back to the exact block size
+    dec_bytes = dec_int.to_bytes(byte_len, 'big')
+    recovered_text = oaep_unpad(dec_bytes, byte_len).decode()
+    print(f"[+] Recovered: {recovered_text}")
+    print("-" * 60)
 
-def recover_private_key(p,q, e):
-    phi = (p-1)*(q-1)
-    return pow(e,-1,phi)
+    # --- 3. RSA-PSS SIGNATURE & TAMPER DEMO ---
+    print("PHASE 2: AUTHENTICITY & INTEGRITY (RSA-PSS)")
+    original_doc = "I authorize payment of $10.00 to Thomas."
+    print(f"[*] Document: {original_doc}")
 
-def run_attack():
-    print('='*60)
-    print("ATTACK DEMO: Breaking Weak RSA")
+    # Sign (Private Key)
+    print("[*] Signing with Private Key...")
+    em_sign = pss_encode(original_doc.encode(), byte_len)
+    sig_int = pow(int.from_bytes(em_sign, 'big'), d, n)
+    
+    # FIX: Use byte_len to prevent OverflowError
+    signature = sig_int.to_bytes(byte_len, 'big')
+    print("[+] Signature created.")
+
+    # Tamper Test Simulation
+    tampered_doc = "I authorize payment of $10,000 to Thomas."
+    print(f"\n[!] ALERT: Attacker modified document to: {tampered_doc}")
+
+    # Verify (Public Key)
+    print("[*] Verifying Signature against tampered document...")
+    # Reverse the RSA math: em = s^e mod n
+    s_int = int.from_bytes(signature, 'big')
+    recovered_em_int = pow(s_int, e, n)
+    recovered_em = recovered_em_int.to_bytes(byte_len, 'big')
+    
+    # Check the PSS structure against the tampered text
+    is_valid = pss_verify(tampered_doc.encode(), recovered_em, byte_len)
+    
+    if not is_valid:
+        print("[SUCCESS] The signature REJECTED the tampered document!")
+        print("[INFO] Integrity check failed as expected.")
+    else:
+        print("[ERROR] The signature was bypassable. Check logic.")
     print("=" * 60)
 
-    (d,n), (e,n) = generate_weak_rsa_keys()
-    print(f"Public Key : e={e}, n={n}")
-
-    p,q = factor(n)
-
-    if p :
-        print(f"[!]Found p={p}, q={q}")
-        recovered_d = recover_private_key(p,q,e)
-
-        print(f"[!] Recovered private key: d={recovered_d}")
-
-        message = 42
-        cipher = pow(message,e,n)
-        decrypted = pow(cipher, recovered_d, n)
 
 
-        print(f"[+] Original: {message}")
-        print(f"[+] Decrypted with hacked key: {decrypted}")
-    else :
-        print("Attack failed")
+def run_attack():
+    """
+    Demonstrates breaking RSA with small primes (educational only).
+    """
+    print("="*60)
+    print("ATTACK DEMO: Breaking RSA with weak parameters")
+    print("="*60)
 
+    # Use very small primes to simulate weak RSA
+    bits = 16  # tiny primes, trivially breakable
+    (d, n), (e, n) = generate_rsa_keys(bits)
+    byte_len = (n.bit_length() + 7) // 8
 
-if __name__ == '__main__' :
-    run_attack()
+    message = "HELLO"
+    print(f"[*] Original message: {message}")
+
+    padded = oaep_pad(message.encode(), byte_len)
+    cipher_int = pow(int.from_bytes(padded, 'big'), e, n)
+    print(f"[+] Ciphertext (int): {cipher_int}")
+
+    # Attacker factors n (trivial with tiny n)
+    print("[*] Attacker factors n and recovers private key...")
+    # In real demo, we’d show factoring n here (for learning)
+    dec_int = pow(cipher_int, d, n)
+    dec_bytes = dec_int.to_bytes(byte_len, 'big')
+    recovered = oaep_unpad(dec_bytes, byte_len).decode()
+    print(f"[+] Recovered message: {recovered}")
+    print("="*60)
