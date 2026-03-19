@@ -119,6 +119,8 @@ cd rsa-security-toolkit
 
 - Key generation not hardened for production
 
+🔑 Keys are automatically generated and stored in `rsa_keys.json` on first use.
+
 ## 🌍 Real-World Applications
 
 - **TLS / HTTPS:** RSA key exchange in secure web communication  
