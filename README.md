@@ -45,16 +45,22 @@ The security of RSA is based on the **Integer Factorization Problem**. While it 
 ### 1. Key Generation
 
 - **Select Primes:** Choose two distinct large primes, \(p\) and \(q\) (verified via our Miller-Rabin engine).  
+
 - **Compute Modulus (\(n\)):**  
+
 $$
 n = p \times q
 $$
-- **Compute Euler's Totient (\(\phi(n)\)):**  
+
+- **Compute Euler's Totient (\(\phi(n)\)):** 
+
 $$
 \phi(n) = (p - 1)(q - 1)
 $$
+
 - **Choose Public Exponent (\(e\)):** We use 65537 (the 4th Fermat prime).  
-- **Compute Private Exponent (\(d\)):** Modular multiplicative inverse of \(e\) modulo \(\phi(n)\):  
+- **Compute Private Exponent (\(d\)):** Modular multiplicative inverse of \(e\) modulo \(\phi(n)\):
+
 $$
 d \cdot e \equiv 1 \pmod{\phi(n)}
 $$
@@ -66,10 +72,13 @@ $$
 RSA uses modular exponentiation to transform data.
 
 - **Encryption:**  
+
 $$
 C = M^e \pmod{n}
 $$
+
 - **Decryption:**  
+
 $$
 M = C^d \pmod{n}
 $$
