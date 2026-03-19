@@ -70,4 +70,10 @@ To clone this project along with its dependencies:
 git clone --recursive [https://github.com/Thomas170491/RSA-Key-Gen.git](https://github.com/Thomas170491/RSA-Key-Gen.git)
 ```
 
+⚠️ This implementation is for educational purposes only.
+
+- Not constant-time → vulnerable to timing attacks
+- No side-channel protections
+- Key generation not hardened for production
+
 This project is open-source and available under the MIT License. See LICENSE file for more info.
