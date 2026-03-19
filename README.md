@@ -1,162 +1,145 @@
-🔐 RSA Security Toolkit: Encryption, Signatures & Attack Simulation
+# RSA Toolkit: Encryption, Signatures & Attack Simulation
 
-A modular, industry-inspired implementation of the RSA (Rivest–Shamir–Adleman) cryptosystem, demonstrating both confidentiality (OAEP) and authenticity (PSS) — along with a practical attack simulation showing how RSA fails under weak parameters.
+A modular, industry-standard implementation of the RSA (Rivest–Shamir–Adleman) cryptosystem, providing both **Confidentiality** (OAEP) and **Authenticity** (PSS). Powered by a custom-built Miller-Rabin Primality Test engine. Includes a practical **attack simulation** to demonstrate weaknesses in weak RSA implementations.
 
-🛠 Architecture
+---
 
-This project follows a separation of concerns design. Core cryptographic primitives are modularized, and prime generation is handled via a dedicated submodule.
+## 🛠 Architecture
+This project is designed with **Separation of Concerns**. The core mathematical primitives are maintained in a separate repository and integrated here as a Git Submodule.
 
-rsa-toolkit/
-│
-├── main.py                  # Secure usage demo (encryption + signatures)
-├── attack_demo.py           # 🔴 Attack simulation (breaking weak RSA)
-│
-├── utils/
-│   ├── rsa_math.py          # Key generation (e, d, n)
-│   ├── padding.py           # OAEP padding implementation
-│   ├── signatures.py        # PSS encoding & verification
-│
-└── README.md
+* **`main.py`**: The entry point that demonstrates the full encryption and signature lifecycle.
+* **`attack_demo.py`**: Demonstrates how RSA can be broken with weak parameters (small primes).
+* **`utils/rsa_math.py`**: Handles keypair generation $(e, n)$ and $(d, n)$ using the Extended Euclidean Algorithm.
+* **`utils/padding.py`**: Implements **OAEP** padding for secure, non-deterministic encryption.
+* **`utils/signatures.py`**: Implements **PSS** encoding for cryptographically secure signatures.
+* **Math Engine:** [Prime-Logic-MillerRabin](https://github.com/Thomas170491/Prime-Logic-MillerRabin) - used for cryptographically secure prime generation.
 
-Math Engine: https://github.com/Thomas170491/Prime-Logic-MillerRabin
+---
 
-Uses Miller–Rabin primality testing for generating large primes
+## 🚀 Features
+- **RSA-OAEP Encryption:** Probabilistic encryption to prevent frequency analysis.
+- **RSASSA-PSS Signatures:** Secure digital signing to ensure data integrity and non-repudiation.
+- **Tamper Detection:** Built-in demonstration showing how signatures mathematically fail if data is altered.
+- **Attack Simulation:** Shows how weak RSA parameters can be exploited to recover private keys.
+- **Secure Randomness:** Uses Python's `secrets` module for industry-standard entropy.
+- **Miller-Rabin Primality Test:** Implements probabilistic testing to find large 1024-bit primes.
 
-🚀 Features
+---
 
-🔐 RSA-OAEP Encryption
-Probabilistic encryption preventing frequency analysis
+## ▶️ Usage
 
-✍️ RSASSA-PSS Signatures
-Secure signing ensuring integrity and non-repudiation
-
-🧪 Tamper Detection Demo
-Demonstrates how signature verification fails when data is modified
-
-🎲 Secure Randomness
-Uses Python’s secrets module for cryptographic entropy
-
-🔍 Attack Simulation
-Demonstrates how RSA can be broken when weak parameters are used
-
-▶️ Usage
-Run secure RSA demo:
+### Run the secure demo:
+```bash
 python main.py
-Run attack simulation:
+```
+### Run the attack simulation:
+```bash
 python attack_demo.py
-🔴 Breaking Weak RSA (Attack Simulation)
+```
 
-This project includes a practical demonstration of how RSA can fail when implemented incorrectly.
 
-Using deliberately weak parameters (small primes), we simulate a real-world attack:
+## 🧮 Mathematical Background
 
-Attacker intercepts the public key (e, n)
+The security of RSA is based on the **Integer Factorization Problem**. While it is computationally easy to multiply two large prime numbers, it is functionally impossible to factor the result back into the original primes using classical computers.
 
-Factors n into p and q
+### 1. Key Generation
+1. **Select Primes:** Choose two distinct large primes, $p$ and $q$ (verified via our **Miller-Rabin** engine).  
+2. **Compute Modulus ($n$):**  
+   $$ n = p \times q $$  
+3. **Compute Euler's Totient ($\phi(n)$):**  
+   $$ \phi(n) = (p - 1)(q - 1) $$  
+4. **Choose Public Exponent ($e$):** We use $65537$ (the 4th Fermat prime).  
+5. **Compute Private Exponent ($d$):** Modular multiplicative inverse of $e$ modulo $\phi(n)$:  
+   $$ d \cdot e \equiv 1 \pmod{\phi(n)} $$  
 
-Reconstructs the private key d
+### 2. Encryption & Decryption
+RSA uses modular exponentiation to transform data.
 
-Decrypts encrypted data
+- **Encryption:**  
+  $$ C = M^e \pmod{n} $$  
+- **Decryption:**  
+  $$ M = C^d \pmod{n} $$  
 
-👉 This demonstrates a fundamental principle:
+### 3. Digital Signatures (RSASSA-PSS)
+Signatures use the private key to "sign" a message hash.
 
-RSA security relies entirely on the difficulty of factoring large integers
+- **Signing:**  
+  $$ S = EM^d \pmod{n} $$  
+- **Verification:**  
+  $$ EM_{recovered} = S^e \pmod{n} $$  
 
-⚠️ With small key sizes, RSA becomes trivially breakable.
+### 4. Proof of Correctness
+The decryption works because of **Euler's Theorem**. Since $d$ is the modular inverse of $e \pmod{\phi(n)}$, we know $ed = 1 + k\phi(n)$ for some integer $k$. Therefore:
 
-🧮 Mathematical Background
+$$
+C^d \equiv (M^e)^d \equiv M^{ed} \equiv M^{1 + k\phi(n)} \equiv M \cdot (M^{\phi(n)})^k \equiv M \cdot 1^k \equiv M \pmod{n}
+$$
 
-RSA security is based on the Integer Factorization Problem:
+---
 
-Easy: Multiply large primes
+## 🔴 Attack Simulation
 
-Hard: Factor the result back into primes
+This section demonstrates how **weak RSA parameters (small primes)** can be exploited:
 
-1. Key Generation
+1. Attacker intercepts the public key $(e, n)$.  
+2. Factors $n$ into $p$ and $q$.  
+3. Recovers the private key $d$.  
+4. Decrypts the message without authorization.
 
-Select two large primes p, q
+> **RSA security depends entirely on the difficulty of factoring large integers.**  
+> ⚠️ Small key sizes are trivially breakable.
 
-Compute modulus:
-n = p × q
+---
 
-Compute totient:
-φ(n) = (p − 1)(q − 1)
+## 🛡️ Security Considerations
 
-Choose public exponent:
-e = 65537
+### Why OAEP & PSS?
+This implementation avoids "Textbook RSA" in favor of **PKCS#1 v2.1**:
 
-Compute private key:
-d × e ≡ 1 mod φ(n)
+- **Semantic Security:** OAEP and PSS introduce a random **seed/salt**, preventing deterministic outputs.  
+- **Malleability Protection:** OAEP ensures tampered ciphertexts fail decryption instead of producing predictable changes.  
+- **Integrity Check:** PSS ensures any single-bit modification is detected, preventing signature forgery.
 
-2. Encryption & Decryption
+---
 
-Encryption:
-C = M^e mod n
+## 🌍 Real-World Applications
 
-Decryption:
-M = C^d mod n
+RSA is widely used in:
 
-3. Digital Signatures (RSA-PSS)
+- TLS / HTTPS (secure web communication)  
+- Public Key Infrastructure (PKI)  
+- Secure email systems (PGP)  
+- Code signing and software verification  
 
-Signing:
-S = EM^d mod n
+This project demonstrates the same foundational mechanisms used in these systems.
 
-Verification:
-EM = S^e mod n
+---
 
-4. Proof of Correctness
+## ⚠️ Disclaimer
 
-Based on Euler’s Theorem:
+This project is for **educational purposes only**.  
 
-M^(ed) ≡ M mod n
+It is **not secure for production** due to:
 
-🛡️ Security Considerations
-Why OAEP & PSS?
+- Lack of constant-time operations  
+- No protection against side-channel attacks  
+- Simplified cryptographic implementation  
 
-This implementation follows modern standards instead of insecure "textbook RSA":
+Use established libraries for real-world applications.
 
-Semantic Security: Random padding prevents identical ciphertexts
+---
 
-Malleability Protection: Tampering results in invalid output
+## 📦 Installation & Setup
 
-Integrity: PSS ensures signatures fail on modification
-
-🌍 Real-World Applications
-
-RSA is widely used in modern systems:
-
-🌐 TLS / HTTPS → Secure web communication
-
-🔑 Public Key Infrastructure (PKI) → Certificates & authentication
-
-📧 Secure Email (PGP) → Encryption and signing
-
-💻 Code Signing → Software integrity verification
-
-👉 This project demonstrates the same primitives used in these systems.
-
-⚠️ Security Disclaimer
-
-This implementation is for educational purposes only.
-
-It is NOT secure for production use due to:
-
-No constant-time operations → vulnerable to timing attacks
-
-No side-channel attack protection
-
-Simplified padding validation
-
-No secure key storage
-
-👉 In production, always use well-established cryptographic libraries.
-
-📦 Installation
-
-Clone the repository with submodules:
-
+```bash
 git clone --recursive https://github.com/Thomas170491/RSA-Key-Gen.git
+```
 
-📄 License
 
-This project is open-source and available under the MIT License.
+## 📄 License
+
+This project is open-source and distributed under the **MIT License**.  
+
+You are free to **use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies** of this software, provided that the original copyright notice and this permission notice are included in all copies or substantial portions of the software.  
+
+For full details, see the [LICENSE](LICENSE) file.
