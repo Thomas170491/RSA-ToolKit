@@ -41,7 +41,7 @@ def run_attack():
 
         print(f"[!] Recovered private key: d={recovered_d}")
 
-        message = "Hello World!"
+        message = 42
         cipher = pow(message,e,n)
         decrypted = pow(cipher, recovered_d, n)
 
