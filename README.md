@@ -1,113 +1,135 @@
-# RSA Toolkit: Encryption, Signatures & Attack Simulation
+# RSA Security Toolkit
 
-A modular, industry-standard implementation of the RSA (Rivest–Shamir–Adleman) cryptosystem, providing both **Confidentiality** (OAEP) and **Authenticity** (PSS). Powered by a custom-built Miller-Rabin Primality Test engine. Includes a practical **attack simulation** to demonstrate weaknesses in weak RSA implementations.
+A professional, modular implementation of the RSA (Rivest–Shamir–Adleman) cryptosystem, providing both **Confidentiality** (OAEP) and **Authenticity** (PSS). Includes a practical **attack simulation** to demonstrate weaknesses in weak RSA implementations.  
+
+This toolkit is designed for educational and portfolio purposes, demonstrating real-world cryptography concepts with a clean CLI interface.
 
 ---
 
 ## 🛠 Architecture
-This project is designed with **Separation of Concerns**. The core mathematical primitives are maintained in a separate repository and integrated here as a Git Submodule.
 
-* **`main.py`**: The entry point that demonstrates the full encryption and signature lifecycle.
-* **`attack_demo.py`**: Demonstrates how RSA can be broken with weak parameters (small primes).
-* **`utils/rsa_math.py`**: Handles keypair generation $(e, n)$ and $(d, n)$ using the Extended Euclidean Algorithm.
-* **`utils/padding.py`**: Implements **OAEP** padding for secure, non-deterministic encryption.
-* **`utils/signatures.py`**: Implements **PSS** encoding for cryptographically secure signatures.
-* **Math Engine:** [Prime-Logic-MillerRabin](https://github.com/Thomas170491/Prime-Logic-MillerRabin) - used for cryptographically secure prime generation.
+- **`rsa_security_toolkit.py`**: Main CLI entry point for demonstration, encryption, decryption, signing, and verification.  
+- **`attack_demo.py`**: Shows how RSA can be broken with weak parameters (small primes).  
+- **`utils/rsa_math.py`**: Keypair generation and core RSA math.  
+- **`utils/padding.py`**: OAEP padding for secure encryption.  
+- **`utils/signatures.py`**: PSS encoding for secure digital signatures.  
+- **`utils/key_manager.py`**: Save/load keys and wrapper functions for encrypt/decrypt/sign/verify.  
+- **Math Engine:** [Prime-Logic-MillerRabin](https://github.com/Thomas170491/Prime-Logic-MillerRabin) — cryptographically secure prime generation.  
 
 ---
 
 ## 🚀 Features
-- **RSA-OAEP Encryption:** Probabilistic encryption to prevent frequency analysis.
-- **RSASSA-PSS Signatures:** Secure digital signing to ensure data integrity and non-repudiation.
-- **Tamper Detection:** Built-in demonstration showing how signatures mathematically fail if data is altered.
-- **Attack Simulation:** Shows how weak RSA parameters can be exploited to recover private keys.
-- **Secure Randomness:** Uses Python's `secrets` module for industry-standard entropy.
-- **Miller-Rabin Primality Test:** Implements probabilistic testing to find large 1024-bit primes.
+
+- **RSA-OAEP Encryption:** Probabilistic encryption for semantic security.  
+- **RSASSA-PSS Signatures:** Digital signatures for authenticity and integrity.  
+- **Tamper Detection:** Shows signature failure when a document is modified.  
+- **Attack Simulation:** Demonstrates how weak RSA parameters can be exploited.  
+- **CLI Interface:** Encrypt, decrypt, sign, verify directly from the terminal.  
+- **Secure Randomness:** Uses Python’s `secrets` module.  
+- **Miller-Rabin Primality Test:** Finds large 1024-bit primes reliably.  
 
 ---
-
-## ▶️ Usage
-
-### Run the secure demo:
-```bash
-python main.py
-```
-### Run the attack simulation:
-```bash
-python attack_demo.py
-```
-
 
 ## 🧮 Mathematical Background
 
-
-For detailed mathematics behind RSA, OAEP, and PSS, see [MATHEMATICAL_BACKGROUND.md](MATHEMATICAL_BACKGROUND.md)
-
----
-
-## 🔴 Attack Simulation
-
-This section demonstrates how **weak RSA parameters (small primes)** can be exploited:
-
-1. Attacker intercepts the public key $(e, n)$.  
-2. Factors $n$ into $p$ and $q$.  
-3. Recovers the private key $d$.  
-4. Decrypts the message without authorization.
-
-> **RSA security depends entirely on the difficulty of factoring large integers.**  
-> ⚠️ Small key sizes are trivially breakable.
+See [MATHEMATICAL_BACKGROUND.md](MATHEMATICAL_BACKGROUND.md) for a detailed explanation of RSA, OAEP, PSS, key generation, and proof of correctness.  
 
 ---
 
-## 🛡️ Security Considerations
+## ▶️ CLI Usage
 
-### Why OAEP & PSS?
-This implementation avoids "Textbook RSA" in favor of **PKCS#1 v2.1**:
+Run the CLI commands using Python:
 
-- **Semantic Security:** OAEP and PSS introduce a random **seed/salt**, preventing deterministic outputs.  
-- **Malleability Protection:** OAEP ensures tampered ciphertexts fail decryption instead of producing predictable changes.  
-- **Integrity Check:** PSS ensures any single-bit modification is detected, preventing signature forgery.
+### **1. Demo**
+Show the full demonstration (encryption, decryption, signing, tamper detection):
 
----
+```bash
+python rsa_security_toolkit.py demo
+```
+### **2. Attack Simulation**
+Demonstrates how RSA can be broken when weak parameters (small primes) are used. The simulation performs the following steps:
+
+1. Attacker intercepts the public key `(e, n)`.  
+2. Factors `n` into its prime components `p` and `q`.  
+3. Recovers the private key `d`.  
+4. Decrypts the message without authorization.  
+
+> ⚠️ This highlights why **RSA security depends entirely on the difficulty of factoring large integers**. Small key sizes are trivially breakable.
+
+```bash
+python rsa_security_toolkit.py attack
+```
+### **3. Encrypt a Message**
+Encrypt plaintext using the public key. The ciphertext is returned in hexadecimal.
+
+```bash
+python rsa_security_toolkit.py encrypt "hello world"
+```
+#### Example output
+
+```bash
+Ciphertext (hex): 0x9a45c611f130453ffb6ea20bfdf068faacf9b57963...
+```
+
+### **4. Decrypt a Message**
+Decrypt a ciphertext (hexadecimal) using the private key:
+
+```bash
+python rsa_security_toolkit.py decrypt 0x9a45c611f130453ffb6ea20bfdf068faacf9b57963...
+```
+#### Example output
+
+```bash
+Decrypted message : hello world
+```
+
+### **5. Sign a Message**
+Sign a plaintext message using the private key:
+
+```bash
+python rsa_security_toolkit.py sign "Authorize payment $10"
+```
+
+The signature is returned in hexadecimal.
+
+### **6. Verify a Signature**
+Verify a signed message using the public key:
+
+```bash
+python rsa_security_toolkit.py verify "Authorize payment $10" <signature_hex>
+```
+The CLI will indicate whether the signature is valid or invalid.
+
+## **6. Installation & Setup**
+
+```markdown
+## 🔧 Installation & Setup
+
+Clone the repository along with submodules:
+
+```bash
+git clone --recursive https://github.com/Thomas170491/rsa-security-toolkit.git
+cd rsa-security-toolkit
+```
+###⚠️ Educational use only:
+
+- Not constant-time → vulnerable to timing attacks
+
+- No side-channel protections
+
+- Key generation not hardened for production
 
 ## 🌍 Real-World Applications
 
-RSA is widely used in:
-
-- TLS / HTTPS (secure web communication)  
-- Public Key Infrastructure (PKI)  
-- Secure email systems (PGP)  
-- Code signing and software verification  
+- **TLS / HTTPS:** RSA key exchange in secure web communication  
+- **Digital Certificates:** Signing and verification in PKI  
+- **Secure Email (PGP):** Encrypting and signing messages  
+- **Code Signing:** Software verification for integrity  
 
 This project demonstrates the same foundational mechanisms used in these systems.
 
----
-
-## ⚠️ Disclaimer
-
-This project is for **educational purposes only**.  
-
-It is **not secure for production** due to:
-
-- Lack of constant-time operations  
-- No protection against side-channel attacks  
-- Simplified cryptographic implementation  
-
-Use established libraries for real-world applications.
-
----
-
-## 📦 Installation & Setup
-
-```bash
-git clone --recursive https://github.com/Thomas170491/RSA-Key-Gen.git
-```
-
-
 ## 📄 License
 
-This project is open-source and distributed under the **MIT License**.  
+MIT License — see [LICENSE](LICENSE) file.  
 
-You are free to **use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies** of this software, provided that the original copyright notice and this permission notice are included in all copies or substantial portions of the software.  
-
-For full details, see the [LICENSE](LICENSE) file.
+You are free to use, modify, and distribute this project for educational or portfolio purposes.
