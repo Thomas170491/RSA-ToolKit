@@ -90,10 +90,13 @@ $$
 Signatures use the private key to "sign" a message hash.
 
 - **Signing:**  
+
 $$
 S = EM^d \pmod{n}
 $$
-- **Verification:**  
+
+- **Verification:** 
+ 
 $$
 EM_{recovered} = S^e \pmod{n}
 $$  
